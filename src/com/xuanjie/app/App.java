@@ -546,20 +546,53 @@ public class App {
 			String attributes_count_hexString_inner = cutString(4);
 			attribute_Code_info.setAttributes_count(Hex.hex2Integer(attributes_count_hexString_inner));
 
-			// 开始存放 属性 List
+			// 开始存放 code属性的 属性表 List
 			List<Attribute_info> attributes_infos_List_inner = new ArrayList<>();
 			for (int k = 0; k < Hex.hex2Integer(attributes_count_hexString_inner); k++) {
 
 				String inner_attribute_name_index_hexString = cutString(4);
 				String inner_attribut_length_hexString = cutString(8);
-				String inner_info_hexString = cutString(Hex.hex2Integer(inner_attribut_length_hexString) * 2);
+				
+				int nameIndex_inner = Hex.hex2Integer(inner_attribute_name_index_hexString);
+				Constant_Utf8_info typeBean_inner = (Constant_Utf8_info) class_info.getConstant_pool_Map().get(nameIndex_inner - 1);
+				String type_inner = typeBean_inner.getBytes();
+				int length_inner = Hex.hex2Integer(inner_attribut_length_hexString);
 
-				Attribute_info attributes_info_inner = new Attribute_info();
-				attributes_info_inner.setAttribute_name_index(Hex.hex2Integer(inner_attribute_name_index_hexString));
-				attributes_info_inner.setAttrbute_length(Hex.hex2Integer(inner_attribut_length_hexString));
-				attributes_info_inner.setInfo(inner_info_hexString);
+				if (type_inner.equals("LineNumberTable")) {
 
-				attributes_infos_List_inner.add(attributes_info_inner);
+					Attribute_LineNumberTable_info attribute_LineNumberTable_info = new Attribute_LineNumberTable_info();
+					attribute_LineNumberTable_info.setAttribute_type("LineNumberTable");
+					attribute_LineNumberTable_info.setAttribute_name_index(nameIndex_inner);
+					attribute_LineNumberTable_info.setAttrbute_length(length_inner);
+
+					String line_number_table_length_hexString = cutString(4);
+
+					// 存放异常 List
+					List<Line_number_info> line_number_table_List = new ArrayList<>();
+					for (int j = 0; j < Hex.hex2Integer(line_number_table_length_hexString); j++) {
+						String start_pc_hexString = cutString(4);
+						String line_number_hexString = cutString(4);
+
+						Line_number_info line_number_info = new Line_number_info();
+						line_number_info.setStart_pc(Hex.hex2Integer(start_pc_hexString));
+						line_number_info.setLine_number(Hex.hex2Integer(line_number_hexString));
+
+						line_number_table_List.add(line_number_info);
+					}
+					attribute_LineNumberTable_info.setLine_number_table_List(line_number_table_List);
+					
+					attributes_infos_List_inner.add(attribute_LineNumberTable_info); 
+				}else {
+					String info_hexString_inner = cutString(length_inner * 2);
+					
+					Attribute_info attributes_info_inner = new Attribute_info();
+					attributes_info_inner.setAttribute_type("other");
+					attributes_info_inner.setAttribute_name_index(nameIndex_inner);
+					attributes_info_inner.setAttrbute_length(length_inner);
+					attributes_info_inner.setInfo(info_hexString_inner);
+					
+					attributes_infos_List_inner.add(attributes_info_inner); 
+				}
 			}
 			attribute_Code_info.setAttributesList(attributes_infos_List_inner);
 
