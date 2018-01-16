@@ -1,6 +1,6 @@
 package com.xuanjie.bean.constant;
 
-public class Constant_IntegerfaceMethodref_info extends Constant_X_info {
+public class Constant_InterfaceMethodref_info extends Constant_X_info {
 	public static final int tag_length = 1;
 	public static final int index_length = 2;
 	public static final int index2_length = 2;

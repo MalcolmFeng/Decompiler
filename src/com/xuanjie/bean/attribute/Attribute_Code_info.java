@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.xuanjie.bean.ExceptionTable;
+import com.xuanjie.bean.OpcodeAndOperand;
 
 
 public class Attribute_Code_info extends Attribute_info{
@@ -14,7 +15,7 @@ public class Attribute_Code_info extends Attribute_info{
 	private int max_statck;
 	private int max_locals;
 	private int code_length;
-	private Map<Integer, String> codeMap;
+	private Map<Integer, OpcodeAndOperand> codeMap;
 	private int exception_table_length;
 	private List<ExceptionTable> exceptionTablesList;
 	private int attributes_count;
@@ -51,10 +52,10 @@ public class Attribute_Code_info extends Attribute_info{
 	public void setCode_length(int code_length) {
 		this.code_length = code_length;
 	}
-	public Map<Integer, String> getCodeMap() {
+	public Map<Integer, OpcodeAndOperand> getCodeMap() {
 		return codeMap;
 	}
-	public void setCodeMap(Map<Integer, String> codeMap) {
+	public void setCodeMap(Map<Integer, OpcodeAndOperand> codeMap) {
 		this.codeMap = codeMap;
 	}
 	public int getException_table_length() {

@@ -15,6 +15,7 @@ import com.xuanjie.bean.Class_info;
 import com.xuanjie.bean.ExceptionTable;
 import com.xuanjie.bean.Fields_info;
 import com.xuanjie.bean.Methods_info;
+import com.xuanjie.bean.OpcodeAndOperand;
 import com.xuanjie.bean.attribute.Attribute_Code_info;
 import com.xuanjie.bean.attribute.Attribute_ConstantValue_info;
 import com.xuanjie.bean.attribute.Attribute_Deprecated_info;
@@ -34,7 +35,7 @@ import com.xuanjie.bean.constant.Constant_Double_info;
 import com.xuanjie.bean.constant.Constant_Fieldref_info;
 import com.xuanjie.bean.constant.Constant_Float_info;
 import com.xuanjie.bean.constant.Constant_Integer_info;
-import com.xuanjie.bean.constant.Constant_IntegerfaceMethodref_info;
+import com.xuanjie.bean.constant.Constant_InterfaceMethodref_info;
 import com.xuanjie.bean.constant.Constant_InvokeDynamic_info;
 import com.xuanjie.bean.constant.Constant_Long_info;
 import com.xuanjie.bean.constant.Constant_MethodHandle_info;
@@ -47,6 +48,7 @@ import com.xuanjie.bean.constant.Constant_X_info;
 import com.xuanjie.core.CodeConvertor;
 import com.xuanjie.core.DataHandler;
 import com.xuanjie.core.FileCreator;
+import com.xuanjie.core.OperandBytesJudge;
 import com.xuanjie.core.SrcCreator;
 import com.xuanjie.utils.Hex;
 
@@ -66,7 +68,7 @@ public class App {
 	 */
 	static {
 		try {
-			byte[] data = getClassData("/Users/Malcolm/Desktop", fileName);
+			byte[] data = getClassData("/Users/Malcolm/Documents/code/java/work/classparser/bin/com/xuanjie/app", fileName);
 			hexString = Hex.byte2HexStr(data);
 
 			clz = Class_info.class;
@@ -144,7 +146,7 @@ public class App {
 				System.out.println(i + "  " + aa.getIndex() + " " + aa.getIndex2());
 			}
 			if (type.equals("Constant_IntegerfaceMethodref_info")) {
-				Constant_IntegerfaceMethodref_info aa = (Constant_IntegerfaceMethodref_info) class_info
+				Constant_InterfaceMethodref_info aa = (Constant_InterfaceMethodref_info) class_info
 						.getConstant_pool_Map().get(i);
 				System.out.println(i + "  " + aa.getIndex() + " " + aa.getIndex2());
 			}
@@ -420,11 +422,11 @@ public class App {
 
 			constant_pool_Map.put(i, constant_Methodref_info);
 		} else if (tag == 11) {
-			Constant_IntegerfaceMethodref_info constant_IntegerfaceMethodref_info = new Constant_IntegerfaceMethodref_info();
+			Constant_InterfaceMethodref_info constant_IntegerfaceMethodref_info = new Constant_InterfaceMethodref_info();
 
-			String index1HexString = cutString(Constant_IntegerfaceMethodref_info.index_length * 2);
+			String index1HexString = cutString(Constant_InterfaceMethodref_info.index_length * 2);
 			int index1String = Hex.hex2Integer(index1HexString);
-			String index2HexString = cutString(Constant_IntegerfaceMethodref_info.index2_length * 2);
+			String index2HexString = cutString(Constant_InterfaceMethodref_info.index2_length * 2);
 			int index2String = Hex.hex2Integer(index2HexString);
 
 			constant_IntegerfaceMethodref_info.setConstant_pool_info_Type("Constant_IntegerfaceMethodref_info");
@@ -513,11 +515,30 @@ public class App {
 			attribute_Code_info.setMax_locals(Hex.hex2Integer(max_locals_hexString));
 			attribute_Code_info.setCode_length(Hex.hex2Integer(code_length_hexString));
 			// 开始存放 codeMap
-			Map<Integer, String> codeMap = new HashMap<>();
+			Map<Integer, OpcodeAndOperand> codeMap = new HashMap<>();
 			for (int k = 0; k < Hex.hex2Integer(code_length_hexString); k++) {
+				OpcodeAndOperand opcodeAndOperand = new OpcodeAndOperand();
 				String code_everyone_hexString = cutString(2);
 				String code = CodeConvertor.codeConvertor(code_everyone_hexString.toLowerCase());
-				codeMap.put(k, code);
+				int i = OperandBytesJudge.operandBytesCount(code);
+				String operand = "";
+				int operand_int = 0;
+				int tempk = k;
+				if (i!=0) {    // 如果有操作数。 进行指针（行数）移动
+					for (int j = 0; j < i; j++) {
+						k++;
+					}
+					operand = cutString(i*2);
+					operand_int = Hex.hex2Integer(operand);
+				}
+				opcodeAndOperand.setOpcode(code);
+				if (code.equals("invokeinterface")) {
+					opcodeAndOperand.setOperand(operand);  //存放之前的字符串形式。 用的时候再分割（ 0016 02 00），解析。
+				}else {
+					opcodeAndOperand.setOperand(operand_int);
+				}
+				codeMap.put(tempk, opcodeAndOperand);
+				
 			}
 			attribute_Code_info.setCodeMap(codeMap);
 			// 开始存放异常表大小
@@ -582,6 +603,36 @@ public class App {
 					attribute_LineNumberTable_info.setLine_number_table_List(line_number_table_List);
 					
 					attributes_infos_List_inner.add(attribute_LineNumberTable_info); 
+				}else if (type_inner.equals("LocalVariableTable")) {
+					Attribute_LocalVariableTable_info attribute_LocalVariableTable_info = new Attribute_LocalVariableTable_info();
+					attribute_LocalVariableTable_info.setAttribute_type("LocalVariableTable");
+					attribute_LocalVariableTable_info.setAttribute_name_index(nameIndex);
+					attribute_LocalVariableTable_info.setAttrbute_length(length);
+					// 存放长度
+					String local_variable_table_length_hexstring = cutString(4);
+					attribute_LocalVariableTable_info
+							.setLocal_variable_table_length(Hex.hex2Integer(local_variable_table_length_hexstring));
+					// 存放 list
+					List<Local_variable_info> local_variable_table_List = new ArrayList<>();
+					for (int i = 0; i < Hex.hex2Integer(local_variable_table_length_hexstring); i++) {
+						String start_pc = cutString(4);
+						String length_pc = cutString(4);
+						String name_index = cutString(4);
+						String descriptor_index = cutString(4);
+						String index = cutString(4);
+
+						Local_variable_info local_variable_info = new Local_variable_info();
+						local_variable_info.setStart_pc(Hex.hex2Integer(start_pc));
+						local_variable_info.setLength(Hex.hex2Integer(length_pc));
+						local_variable_info.setName_index(Hex.hex2Integer(name_index));
+						local_variable_info.setDescriptor_index(Hex.hex2Integer(descriptor_index));
+						local_variable_info.setIndex(Hex.hex2Integer(index));
+
+						local_variable_table_List.add(local_variable_info);
+					}
+					attribute_LocalVariableTable_info.setLocal_variable_table_List(local_variable_table_List);
+
+					attributes_infos_List_inner.add(attribute_LocalVariableTable_info);
 				}else {
 					String info_hexString_inner = cutString(length_inner * 2);
 					
