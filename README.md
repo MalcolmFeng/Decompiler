@@ -21,7 +21,7 @@ u4代表4个字节，代表8长度的十六进制（如0x00000001）
 
 　　4. 上边对 class 文件的数据结构进行了简略的介绍，现在我们开始讨论如何解析并存储 class 文件。 我们可以按照class 文件中的各种表结构，建立相应的 Bean，例如 对于整个 class 文件，即class_info，我们可以建立如下的 bean：
 
-(''')
+(```)
 public class Class_info {
     private String magic;  //魔数
     private String minor_version;  //虚拟机次版本
@@ -50,10 +50,10 @@ public class Class_info {
 　　..... 省略其他 get set
 
 }
-(''')
+(```)
 　　将所有的表结构都搭建好后，我们可以开始对 class 文件读取到的 十六进制字符串进行切割，将切割到的数据填充到我们的 bean 中。在此，提供一种切割字符串的思路：创建一个静态指针，指向切割字符串的 start 位置，每次切割length 长度后，对指针进行初始化，即 start = start + length。如果要进行切割数据，那么只需要调用 cutString（int len） 就可以了。 代码如下：
 
-(''')
+(```)
 　　 private static int start_pointer = 0; 
     private static String hexString = ""; // 十六进制串
 
@@ -63,7 +63,7 @@ public class Class_info {
         start_pointer = start_pointer + len;
         return cutStr;
     }
-(''')
+(```)
 　　
 
 　　5. 请注意，上述虽然说起来简单，然而切割数据不可以弄错任何一个字节的长度，如果弄错任何一个字节的长度，那后边的数据完全是错位的，必须推倒重来！ 经过一系列努力后，终于把所有的数据都进行切割并填充到了 bean 中，下面就是利用数据，拼装 java 源代码了。这一部分最重要的无非是方法体的拼装，在编译的过程中，编译器已经将 方法体中的java 语句编译成了字节码指令，完全是内存的堆栈操作，跟我们之前的 java 代码比完全变了形式和语法。那么，如何根据字节码指令，推导出java源代码呢？总结所有的 java 语法，无非是：
